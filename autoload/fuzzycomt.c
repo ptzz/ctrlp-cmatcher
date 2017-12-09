@@ -75,8 +75,8 @@ char *strduplicate(const char *s) {
 char *slashsplit(char *line) {
     char *fname = line;
     char *scan = fname;
-    while (scan != '\0')
-    {   
+    while (*scan != '\0')
+    {
         if (*scan == '/' || *scan == '\\') {
             fname = ++scan;
         } else {
