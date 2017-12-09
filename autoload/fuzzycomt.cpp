@@ -24,6 +24,7 @@
 
 #include "float.h"
 #include "fuzzycomt.h"
+#include "algorithm"
 
 // Forward declaration for ctrlp_get_line_matches
 matchobj_t ctrlp_find_match(PyObject* str, PyObject* abbrev, mmode_t mmode);
@@ -77,14 +78,11 @@ char *slashsplit(char *line) {
 }
 
 // comparison function for use with qsort
-int ctrlp_comp_alpha(const void *a, const void *b) {
-    matchobj_t a_val = *(matchobj_t *)a;
-    matchobj_t b_val = *(matchobj_t *)b;
-
-    char *a_p = PyString_AsString(a_val.str);
-    long a_len = PyString_Size(a_val.str);
-    char *b_p = PyString_AsString(b_val.str);
-    long b_len = PyString_Size(b_val.str);
+int ctrlp_comp_alpha(const matchobj_t& a, const matchobj_t& b) {
+    char *a_p = PyString_AsString(a.str);
+    long a_len = PyString_Size(a.str);
+    char *b_p = PyString_AsString(b.str);
+    long b_len = PyString_Size(b.str);
 
     int order = 0;
     if (a_len > b_len) {
@@ -101,20 +99,14 @@ int ctrlp_comp_alpha(const void *a, const void *b) {
         order = strncmp(a_p, b_p, a_len);
     }
 
-    return order;
+    return order == -1;
 }
 
-int ctrlp_comp_score_alpha(const void *a, const void *b) {
-    matchobj_t a_val = *(matchobj_t *)a;
-    matchobj_t b_val = *(matchobj_t *)b;
-    double a_score = a_val.score;
-    double b_score = b_val.score;
-    if (a_score > b_score)
-        return -1; // a scores higher, a should appear sooner
-    else if (a_score < b_score)
-        return 1;  // b scores higher, a should appear later
-    else
+int ctrlp_comp_score_alpha(const matchobj_t& a, const matchobj_t& b) {
+    if (a.score == b.score)
         return ctrlp_comp_alpha(a, b);
+    else
+        return a.score > b.score;
 }
 
 double ctrlp_recursive_match(matchinfo_t *m,    // sharable meta-data
@@ -257,10 +249,10 @@ PyObject* ctrlp_fuzzycomt_match(PyObject* self, PyObject* args) {
         // find matches and place them into matches array.
         ctrlp_get_line_matches(paths,abbrev, matches, mmode);
 
-        // sort array of struct by struct.score key
-        qsort(matches, PyList_Size(paths),
-              sizeof(matchobj_t),
-              ctrlp_comp_score_alpha);
+        // Only the matches visible on screen needs to be sorted. This can be
+        // achieved using an in-place partial sort.
+        std::nth_element(&matches[0], &matches[limit], &matches[PyList_Size(paths)-1], ctrlp_comp_score_alpha);
+        std::sort(&matches[0], &matches[limit], ctrlp_comp_score_alpha);
     }
 
     for (Py_ssize_t i = 0, max = PyList_Size(paths); i < max; i++) {
@@ -323,11 +315,10 @@ PyObject* ctrlp_fuzzycomt_sorted_match_list(PyObject* self, PyObject* args) {
         // find matches and place them into matches array.
         ctrlp_get_line_matches(paths,abbrev, matches, mmode);
 
-        // sort array of struct by struct.score key
-        qsort(matches,
-              PyList_Size(paths),
-              sizeof(matchobj_t),
-              ctrlp_comp_score_alpha);
+        // Only the matches visible on screen needs to be sorted. This can be
+        // achieved using an in-place partial sort.
+        std::nth_element(&matches[0], &matches[limit], &matches[PyList_Size(paths)-1], ctrlp_comp_score_alpha);
+        std::sort(&matches[0], &matches[limit], ctrlp_comp_score_alpha);
     }
 
     for (Py_ssize_t i = 0, max = PyList_Size(paths); i < max; i++) {
