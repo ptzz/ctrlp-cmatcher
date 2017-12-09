@@ -52,24 +52,13 @@ void ctrlp_get_line_matches(PyObject* paths,
                             matchobj_t matches[],
                             char *mmode)
 {
-    int i;
-    int max;
-
     mmode_t mmodeEnum = getMMode(mmode);
 
     // iterate over lines and get match score for every line
-    for (i = 0, max = PyList_Size(paths); i < max; i++) {
+    for (Py_ssize_t i = 0, max = PyList_Size(paths); i < max; i++) {
         PyObject* path = PyList_GetItem(paths, i);
         matches[i] = ctrlp_find_match(path, abbrev, mmodeEnum);
     }
-}
-
-char *strduplicate(const char *s) {
-    char *d = malloc (strlen (s) + 1);
-    if (d == NULL)
-       return NULL;
-    strcpy (d,s);
-    return d;
 }
 
 char *slashsplit(char *line) {
@@ -84,7 +73,7 @@ char *slashsplit(char *line) {
         }
     }
 
-   return fname;
+    return fname;
 }
 
 // comparison function for use with qsort
@@ -234,8 +223,6 @@ PyObject* ctrlp_fuzzycomt_match(PyObject* self, PyObject* args) {
     PyObject *paths, *abbrev, *returnlist;
     Py_ssize_t limit;
     char *mmode;
-    int i;
-    int max;
 
     if (!PyArg_ParseTuple(args, "OOns", &paths, &abbrev, &limit, &mmode)) {
        return NULL;
@@ -276,7 +263,7 @@ PyObject* ctrlp_fuzzycomt_match(PyObject* self, PyObject* args) {
               ctrlp_comp_score_alpha);
     }
 
-    for (i = 0, max = PyList_Size(paths); i < max; i++) {
+    for (Py_ssize_t i = 0, max = PyList_Size(paths); i < max; i++) {
             if (i == limit)
                 break;
             // generate python dicts { 'line' : line, 'value' : value }
@@ -302,8 +289,6 @@ PyObject* ctrlp_fuzzycomt_sorted_match_list(PyObject* self, PyObject* args) {
     PyObject *paths, *abbrev, *returnlist;
     Py_ssize_t limit;
     char *mmode;
-    int i;
-    int max;
 
     if (!PyArg_ParseTuple(args, "OOns", &paths, &abbrev, &limit, &mmode)) {
        return NULL;
@@ -345,9 +330,9 @@ PyObject* ctrlp_fuzzycomt_sorted_match_list(PyObject* self, PyObject* args) {
               ctrlp_comp_score_alpha);
     }
 
-    for (i = 0, max = PyList_Size(paths); i < max; i++) {
-       if (i == limit)
-          break;
+    for (Py_ssize_t i = 0, max = PyList_Size(paths); i < max; i++) {
+        if (i == limit)
+            break;
         if ( matches[i].score> 0 ) {
             // TODO it retuns non-encoded string. So cyrillic literals
             // arent properly showed.

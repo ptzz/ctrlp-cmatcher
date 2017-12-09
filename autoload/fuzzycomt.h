@@ -28,7 +28,7 @@
 #include <string.h>
 #include <assert.h>
 
-
+extern "C" {
 
 typedef enum mmode {
     fullLine,
@@ -59,3 +59,5 @@ void ctrlp_get_line_matches(PyObject* paths, PyObject* abbrev, matchobj_t matche
 PyObject* ctrlp_fuzzycomt_match(PyObject* self, PyObject* args);
 
 PyObject* ctrlp_fuzzycomt_sorted_match_list(PyObject* self, PyObject* args);
+
+} // extern "C"
