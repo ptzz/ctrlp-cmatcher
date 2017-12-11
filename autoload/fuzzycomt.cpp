@@ -219,20 +219,19 @@ PyObject* ctrlp_fuzzycomt_match(PyObject* self, PyObject* args) {
     if (!PyArg_ParseTuple(args, "OOns", &paths, &abbrev, &limit, &mmode)) {
        return NULL;
     }
-    returnlist = PyList_New(0);
 
     // Type checking
     if (PyList_Check(paths) != 1) {
         PyErr_SetString(PyExc_TypeError,"expected a list");
-        return 0;
+        return NULL;
     }
 
     if (PyString_Check(abbrev) != 1) {
         PyErr_SetString(PyExc_TypeError,"expected a string");
-        return 0;
+        return NULL;
     }
 
-    matchobj_t matches[PyList_Size(paths)];
+    matchobj_t* matches = NULL;
 
     if ( (limit > PyList_Size(paths)) || (limit == 0) ) {
         limit = PyList_Size(paths);
@@ -240,21 +239,20 @@ PyObject* ctrlp_fuzzycomt_match(PyObject* self, PyObject* args) {
 
     if ( PyString_Size(abbrev) == 0) {
         // if string is empty - just return first (:param limit) lines
-        PyObject *initlist;
-
-        initlist = PyList_GetSlice(paths,0,limit);
-        return initlist;
+        return PyList_GetSlice(paths,0,limit);
     }
     else {
+        matches = (matchobj_t*)malloc(PyList_Size(paths) * sizeof(matchobj_t));
         // find matches and place them into matches array.
         ctrlp_get_line_matches(paths,abbrev, matches, mmode);
 
         // Only the matches visible on screen needs to be sorted. This can be
         // achieved using an in-place partial sort.
-        std::nth_element(&matches[0], &matches[limit], &matches[PyList_Size(paths)-1], ctrlp_comp_score_alpha);
-        std::sort(&matches[0], &matches[limit], ctrlp_comp_score_alpha);
+        std::nth_element(&matches[0], &matches[limit-1], &matches[PyList_Size(paths)-1], ctrlp_comp_score_alpha);
+        std::sort(&matches[0], &matches[limit-1], ctrlp_comp_score_alpha);
     }
 
+    returnlist = PyList_New(0);
     for (Py_ssize_t i = 0, max = PyList_Size(paths); i < max; i++) {
             if (i == limit)
                 break;
@@ -273,6 +271,8 @@ PyObject* ctrlp_fuzzycomt_match(PyObject* self, PyObject* args) {
                                  PyFloat_FromDouble(matches[i].score));
             PyList_Append(returnlist,container);
     }
+
+    if (matches) free(matches);
 
     return returnlist;
 }
@@ -298,7 +298,7 @@ PyObject* ctrlp_fuzzycomt_sorted_match_list(PyObject* self, PyObject* args) {
         return 0;
     }
 
-    matchobj_t matches[PyList_Size(paths)];
+    matchobj_t* matches = NULL;
 
     if ( (limit > PyList_Size(paths)) || (limit == 0) ) {
         limit = PyList_Size(paths);
@@ -312,13 +312,15 @@ PyObject* ctrlp_fuzzycomt_sorted_match_list(PyObject* self, PyObject* args) {
         return initlist;
     }
     else {
+        matches = (matchobj_t*)malloc(PyList_Size(paths) * sizeof(matchobj_t));
+
         // find matches and place them into matches array.
         ctrlp_get_line_matches(paths,abbrev, matches, mmode);
 
         // Only the matches visible on screen needs to be sorted. This can be
         // achieved using an in-place partial sort.
-        std::nth_element(&matches[0], &matches[limit], &matches[PyList_Size(paths)-1], ctrlp_comp_score_alpha);
-        std::sort(&matches[0], &matches[limit], ctrlp_comp_score_alpha);
+        std::nth_element(&matches[0], &matches[limit-1], &matches[PyList_Size(paths)-1], ctrlp_comp_score_alpha);
+        std::sort(&matches[0], &matches[limit-1], ctrlp_comp_score_alpha);
     }
 
     for (Py_ssize_t i = 0, max = PyList_Size(paths); i < max; i++) {
@@ -333,6 +335,8 @@ PyObject* ctrlp_fuzzycomt_sorted_match_list(PyObject* self, PyObject* args) {
             PyList_Append(returnlist,matches[i].str);
         }
     }
+
+    if (matches) free(matches);
 
     return returnlist;
 }
