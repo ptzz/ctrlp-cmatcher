@@ -248,8 +248,7 @@ PyObject* ctrlp_fuzzycomt_match(PyObject* self, PyObject* args) {
 
         // Only the matches visible on screen needs to be sorted. This can be
         // achieved using an in-place partial sort.
-        std::nth_element(&matches[0], &matches[limit-1], &matches[PyList_Size(paths)-1], ctrlp_comp_score_alpha);
-        std::sort(&matches[0], &matches[limit-1], ctrlp_comp_score_alpha);
+        std::partial_sort(matches, matches + limit, matches + PyList_Size(paths), ctrlp_comp_score_alpha);
     }
 
     returnlist = PyList_New(0);
@@ -319,8 +318,7 @@ PyObject* ctrlp_fuzzycomt_sorted_match_list(PyObject* self, PyObject* args) {
 
         // Only the matches visible on screen needs to be sorted. This can be
         // achieved using an in-place partial sort.
-        std::nth_element(&matches[0], &matches[limit-1], &matches[PyList_Size(paths)-1], ctrlp_comp_score_alpha);
-        std::sort(&matches[0], &matches[limit-1], ctrlp_comp_score_alpha);
+        std::partial_sort(matches, matches + limit, matches + PyList_Size(paths), ctrlp_comp_score_alpha);
     }
 
     for (Py_ssize_t i = 0, max = PyList_Size(paths); i < max; i++) {
